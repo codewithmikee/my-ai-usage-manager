@@ -6,6 +6,8 @@ export interface Account {
   name: string;
   availableAt: number | null; // Timestamp, null means currently available
   notified?: boolean;
+  nextResetAt?: number | null; // Optional: scheduled limit reset time
+  nextResetNotified?: boolean;
 }
 
 export interface Product {
@@ -22,8 +24,10 @@ interface StoreState {
   addAccount: (productId: string, name?: string) => void;
   updateAccount: (productId: string, accountId: string, name: string) => void;
   setAvailableAt: (productId: string, accountId: string, timestamp: number | null) => void;
+  setNextResetAt: (productId: string, accountId: string, timestamp: number | null) => void;
   removeAccount: (productId: string, accountId: string) => void;
   markNotified: (productId: string, accountId: string) => void;
+  markNextResetNotified: (productId: string, accountId: string) => void;
   settings: {
     showCountdown: boolean;
   };
@@ -115,6 +119,19 @@ export const useStore = create<StoreState>()(
               : p
           ),
         })),
+      setNextResetAt: (productId, accountId, timestamp) =>
+        set((state) => ({
+          products: state.products.map((p) =>
+            p.id === productId
+              ? {
+                  ...p,
+                  accounts: p.accounts.map((a) =>
+                    a.id === accountId ? { ...a, nextResetAt: timestamp, nextResetNotified: false } : a
+                  ),
+                }
+              : p
+          ),
+        })),
       removeAccount: (productId, accountId) =>
         set((state) => ({
           products: state.products.map((p) =>
@@ -134,6 +151,19 @@ export const useStore = create<StoreState>()(
                   ...p,
                   accounts: p.accounts.map((a) =>
                     a.id === accountId ? { ...a, notified: true } : a
+                  ),
+                }
+              : p
+          ),
+        })),
+      markNextResetNotified: (productId, accountId) =>
+        set((state) => ({
+          products: state.products.map((p) =>
+            p.id === productId
+              ? {
+                  ...p,
+                  accounts: p.accounts.map((a) =>
+                    a.id === accountId ? { ...a, nextResetNotified: true } : a
                   ),
                 }
               : p
@@ -161,11 +191,24 @@ export const useStore = create<StoreState>()(
                           availableAtVal = parsed;
                         }
                       }
+
+                      let nextResetAtVal: number | null = null;
+                      if (typeof a.nextResetAt === 'number') {
+                        nextResetAtVal = a.nextResetAt;
+                      } else if (typeof a.nextResetAt === 'string') {
+                        const parsed = Date.parse(a.nextResetAt);
+                        if (!isNaN(parsed)) {
+                          nextResetAtVal = parsed;
+                        }
+                      }
+
                       accountsArray.push({
                         id: a.id && typeof a.id === 'string' ? a.id : generateId(),
                         name: a.name,
                         availableAt: availableAtVal,
                         notified: !!a.notified,
+                        nextResetAt: nextResetAtVal,
+                        nextResetNotified: !!a.nextResetNotified,
                       });
                     }
                   });

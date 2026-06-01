@@ -9,9 +9,11 @@ interface LimitTimerPopoverProps {
   availableAt: number | null;
   onSetTime: (timestamp: number | null) => void;
   children: React.ReactNode;
+  title?: string;
+  clearLabel?: string;
 }
 
-export function LimitTimerPopover({ availableAt, onSetTime, children }: LimitTimerPopoverProps) {
+export function LimitTimerPopover({ availableAt, onSetTime, children, title = "Set Availability Time", clearLabel = "Mark Available" }: LimitTimerPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   
   // Format for datetime-local input: YYYY-MM-DDThh:mm
@@ -47,10 +49,10 @@ export function LimitTimerPopover({ availableAt, onSetTime, children }: LimitTim
       <PopoverContent className="w-80" align="end">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Set Availability Time</h4>
+            <h4 className="font-medium text-sm">{title}</h4>
             {availableAt !== null && (
               <Button variant="ghost" size="sm" className="h-auto p-1 px-2 text-xs text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-950/50" onClick={clearTimer}>
-                Mark Available
+                {clearLabel}
               </Button>
             )}
           </div>

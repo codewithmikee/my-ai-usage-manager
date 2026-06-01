@@ -5,6 +5,7 @@ import { isPast } from 'date-fns';
 export function NotificationManager() {
   const products = useStore((state) => state.products);
   const markNotified = useStore((state) => state.markNotified);
+  const markNextResetNotified = useStore((state) => state.markNextResetNotified);
 
   useEffect(() => {
     const checkNotifications = () => {
@@ -12,30 +13,43 @@ export function NotificationManager() {
 
       products.forEach((product) => {
         product.accounts.forEach((account) => {
+          // 1. Hard Availability Locks
           if (
             account.availableAt !== null &&
             isPast(account.availableAt) &&
             !account.notified
           ) {
-            // Trigger notification
-            const notification = new Notification(`${product.name} is Ready`, {
+            new Notification(`${product.name} is Ready`, {
               body: `${account.name} is now available to use.`,
-              icon: '/favicon.ico', // assuming there's a default favicon, or just omit
+              icon: '/favicon.ico',
             });
 
-            // Mark as notified so we don't trigger it again
             markNotified(product.id, account.id);
+          }
+
+          // 2. Scheduled Background Reset Cycles
+          if (
+            account.nextResetAt !== undefined &&
+            account.nextResetAt !== null &&
+            isPast(account.nextResetAt) &&
+            !account.nextResetNotified
+          ) {
+            new Notification(`${product.name} Cycle Reset`, {
+              body: `The background usage cycle for ${account.name} has reset!`,
+              icon: '/favicon.ico',
+            });
+
+            markNextResetNotified(product.id, account.id);
           }
         });
       });
     };
 
-    // Check immediately on mount, and then every 20 seconds
     checkNotifications();
-    const intervalId = setInterval(checkNotifications, 20000);
+    const intervalId = setInterval(checkNotifications, 10000);
 
     return () => clearInterval(intervalId);
-  }, [products, markNotified]);
+  }, [products, markNotified, markNextResetNotified]);
 
   return null;
 }
