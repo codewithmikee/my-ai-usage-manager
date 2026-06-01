@@ -9,7 +9,8 @@ export function NotificationManager() {
 
   useEffect(() => {
     const checkNotifications = () => {
-      if (Notification.permission !== 'granted') return;
+      if (typeof window === 'undefined' || !('Notification' in window)) return;
+      if (window.Notification.permission !== 'granted') return;
 
       products.forEach((product) => {
         product.accounts.forEach((account) => {
@@ -19,7 +20,7 @@ export function NotificationManager() {
             isPast(account.availableAt) &&
             !account.notified
           ) {
-            new Notification(`${product.name} is Ready`, {
+            new window.Notification(`${product.name} is Ready`, {
               body: `${account.name} is now available to use.`,
               icon: '/favicon.ico',
             });
@@ -34,7 +35,7 @@ export function NotificationManager() {
             isPast(account.nextResetAt) &&
             !account.nextResetNotified
           ) {
-            new Notification(`${product.name} Cycle Reset`, {
+            new window.Notification(`${product.name} Cycle Reset`, {
               body: `The background usage cycle for ${account.name} has reset!`,
               icon: '/favicon.ico',
             });
