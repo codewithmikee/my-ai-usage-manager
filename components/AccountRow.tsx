@@ -55,20 +55,22 @@ export function AccountRow({ productId, account }: AccountRowProps) {
             : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
         )} />
         
-        <div className="flex items-center gap-2 min-w-0">
-          <EditableText 
-            value={account.name} 
-            onChange={(val) => updateAccount(productId, account.id, val)}
-            textClassName={cn(
-              "text-sm font-medium truncate tracking-tight transition-colors duration-200 block max-w-[150px] sm:max-w-[320px]", 
-              isAvailable 
-                ? "text-gray-800 dark:text-gray-200" 
-                : "text-amber-700/90 dark:text-amber-500/90"
-            )}
-            trigger="doubleClick"
-          />
+        <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[200px_auto] md:grid-cols-[240px_auto] lg:grid-cols-[280px_auto] items-center gap-4 min-w-0 flex-1">
+          <div className="min-w-0">
+            <EditableText 
+              value={account.name} 
+              onChange={(val) => updateAccount(productId, account.id, val)}
+              textClassName={cn(
+                "text-sm font-medium truncate tracking-tight transition-colors duration-200 block max-w-full", 
+                isAvailable 
+                  ? "text-gray-800 dark:text-gray-200" 
+                  : "text-amber-700/90 dark:text-amber-500/90"
+              )}
+              trigger="doubleClick"
+            />
+          </div>
 
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0 ml-1">
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0">
             <LimitTimerPopover 
               availableAt={account.availableAt} 
               onSetTime={(time) => setAvailableAt(productId, account.id, time)}
