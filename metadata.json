@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Limit Tracker",
+  "description": "Track API and service rate limits with inline editing and reminders.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
