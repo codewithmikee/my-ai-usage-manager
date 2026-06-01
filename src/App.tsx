@@ -1,6 +1,6 @@
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { Plus, Settings2, Trash2, Bell, BellOff, Moon, Sun, Download, Upload, AlertCircle } from 'lucide-react';
+import { Plus, Settings2, Trash2, Bell, BellOff, Moon, Sun, Download, Upload, AlertCircle, Menu, X } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import React, { useState, useEffect, ChangeEvent } from 'react';
@@ -22,6 +22,7 @@ export default function App() {
   const importData = useStore((state) => state.importData);
   
   const [selectedProductId, setSelectedProductId] = useState<string | null>(products[0]?.id || null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [pendingImport, setPendingImport] = useState<{ products: any[]; fileName: string } | null>(null);
   const [newAccountName, setNewAccountName] = useState('');
@@ -114,14 +115,24 @@ export default function App() {
       <NotificationManager />
 
       {/* Standard App Title Bar */}
-      <header className="h-14 w-full flex-shrink-0 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-950 flex items-center px-6 justify-between select-none">
-        <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 bg-black dark:bg-white rounded flex items-center justify-center">
-            <div className="w-3.5 h-0.5 bg-white dark:bg-black rounded-full"></div>
+      <header className="h-14 w-full flex-shrink-0 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-950 flex items-center px-4 md:px-6 justify-between select-none">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="md:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer text-gray-500 hover:text-gray-900 dark:hover:text-gray-100"
+            title="Toggle Sidebar"
+          >
+            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+          
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 bg-black dark:bg-white rounded flex items-center justify-center">
+              <div className="w-3.5 h-0.5 bg-white dark:bg-black rounded-full"></div>
+            </div>
+            <span className="font-semibold text-sm tracking-tight text-gray-900 dark:text-gray-100">
+              LimitTracker
+            </span>
           </div>
-          <span className="font-semibold text-sm tracking-tight text-gray-900 dark:text-gray-100">
-            LimitTracker
-          </span>
         </div>
 
         <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500">
@@ -159,8 +170,19 @@ export default function App() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-64 border-r border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-950 flex flex-col flex-shrink-0 transition-colors">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Backdrop for mobile */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/40 dark:bg-black/60 md:hidden z-40 transition-opacity animate-fade-in"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        <aside className={cn(
+          "fixed inset-y-0 left-0 w-64 border-r border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-950 flex flex-col flex-shrink-0 transition-transform duration-300 z-50 md:static md:translate-x-0",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
           <div className="p-4 flex-1 overflow-y-auto">
             <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2">Tools</h2>
           <nav className="space-y-0.5">
@@ -169,7 +191,10 @@ export default function App() {
               return (
               <div 
                 key={product.id}
-                onClick={() => setSelectedProductId(product.id)}
+                onClick={() => {
+                  setSelectedProductId(product.id);
+                  setIsSidebarOpen(false);
+                }}
                 className={cn(
                   "flex items-center justify-between p-2 rounded-lg group cursor-pointer transition-colors",
                   selectedProduct?.id === product.id ? "bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
@@ -292,8 +317,8 @@ export default function App() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white dark:bg-background transition-colors">
         {selectedProduct ? (
           <>
-            <header className="h-24 px-10 flex flex-col justify-end pb-4 flex-shrink-0">
-              <div className="flex items-end justify-between">
+            <header className="min-h-24 px-4 md:px-10 flex flex-col justify-end pb-4 flex-shrink-0 pt-6">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div className="flex flex-col group min-w-0">
                   <EditableText 
                     value={selectedProduct.name}
@@ -324,7 +349,7 @@ export default function App() {
               </div>
             </header>
             
-            <div className="flex-1 overflow-auto px-10 pb-10">
+            <div className="flex-1 overflow-auto px-4 md:px-10 pb-10">
               <div className="flex flex-col gap-1 max-w-3xl">
                 {selectedProduct.accounts.length === 0 ? (
                   <div className="flex flex-col gap-3 py-4">

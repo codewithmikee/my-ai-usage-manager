@@ -70,7 +70,7 @@ export function AccountRow({ productId, account }: AccountRowProps) {
             />
           </div>
 
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0">
+          <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0">
             <LimitTimerPopover 
               availableAt={account.availableAt} 
               onSetTime={(time) => setAvailableAt(productId, account.id, time)}
