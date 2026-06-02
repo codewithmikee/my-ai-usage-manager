@@ -8,10 +8,11 @@ interface EditableTextProps {
   className?: string;
   textClassName?: string;
   trigger?: 'click' | 'doubleClick';
+  autoFocus?: boolean;
 }
 
-export function EditableText({ value, onChange, className, textClassName, trigger = 'doubleClick' }: EditableTextProps) {
-  const [isEditing, setIsEditing] = useState(false);
+export function EditableText({ value, onChange, className, textClassName, trigger = 'doubleClick', autoFocus = false }: EditableTextProps) {
+  const [isEditing, setIsEditing] = useState(autoFocus);
   const [localValue, setLocalValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -22,6 +23,7 @@ export function EditableText({ value, onChange, className, textClassName, trigge
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
+      inputRef.current.select();
     }
   }, [isEditing]);
 

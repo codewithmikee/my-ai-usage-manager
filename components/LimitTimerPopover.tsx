@@ -46,7 +46,7 @@ export function LimitTimerPopover({ availableAt, onSetTime, children, title = "S
       <PopoverTrigger>
         {children}
       </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
+      <PopoverContent className="w-80 max-w-[calc(100vw-2rem)]" align="end">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="font-medium text-sm">{title}</h4>

@@ -22,6 +22,7 @@ export default function App() {
   const importData = useStore((state) => state.importData);
   
   const [selectedProductId, setSelectedProductId] = useState<string | null>(products[0]?.id || null);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [pendingImport, setPendingImport] = useState<{ products: any[]; fileName: string } | null>(null);
@@ -200,11 +201,15 @@ export default function App() {
                   selectedProduct?.id === product.id ? "bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
                 )}
               >
-                <EditableText 
+                <EditableText
                   value={product.name}
-                  onChange={(val) => updateProduct(product.id, val)}
+                  onChange={(val) => {
+                    updateProduct(product.id, val);
+                    setEditingProductId(null);
+                  }}
                   textClassName="text-sm font-medium w-full truncate"
                   trigger="doubleClick"
+                  autoFocus={product.id === editingProductId}
                 />
                 {availableCount > 0 && (
                    <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium flex-shrink-0 ml-2">
@@ -213,9 +218,11 @@ export default function App() {
                 )}
               </div>
             )})}
-            <div 
+            <div
               onClick={() => {
-                addProduct();
+                const newId = addProduct();
+                setSelectedProductId(newId);
+                setEditingProductId(newId);
               }}
               className="flex items-center p-2 mt-4 text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg group cursor-pointer transition-colors"
             >

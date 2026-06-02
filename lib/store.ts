@@ -18,7 +18,7 @@ export interface Product {
 
 interface StoreState {
   products: Product[];
-  addProduct: () => void;
+  addProduct: () => string;
   updateProduct: (id: string, name: string) => void;
   removeProduct: (id: string) => void;
   addAccount: (productId: string, name?: string) => void;
@@ -62,13 +62,16 @@ export const useStore = create<StoreState>()(
       },
       updateSettings: (newSettings) =>
         set((state) => ({ settings: { ...state.settings, ...newSettings } })),
-      addProduct: () =>
+      addProduct: () => {
+        const newId = generateId();
         set((state) => ({
           products: [
             ...state.products,
-            { id: generateId(), name: 'New Product', accounts: [] },
+            { id: newId, name: 'New Product', accounts: [] },
           ],
-        })),
+        }));
+        return newId;
+      },
       updateProduct: (id, name) =>
         set((state) => ({
           products: state.products.map((p) =>
