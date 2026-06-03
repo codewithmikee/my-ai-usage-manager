@@ -13,6 +13,7 @@ import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/lib/authStore';
 import { LoginPage } from '@/components/LoginPage';
 import { SupabaseSync } from '@/components/SupabaseSync';
+import { SyncIndicator } from '@/components/SyncIndicator';
 
 export default function App() {
   const { user, loading: authLoading, signOut } = useAuthStore();
@@ -195,6 +196,8 @@ export default function App() {
           >
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
+
+          <SyncIndicator />
 
           <div className="h-4 w-[1px] bg-gray-200 dark:bg-white/10 mx-1"></div>
 
