@@ -1,6 +1,6 @@
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { Plus, Settings2, Trash2, Bell, BellOff, Moon, Sun, Download, Upload, AlertCircle, Menu, X } from 'lucide-react';
+import { Plus, Settings2, Trash2, Bell, BellOff, Moon, Sun, Download, Upload, AlertCircle, Menu, X, LogOut } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import React, { useState, useEffect, ChangeEvent } from 'react';
@@ -10,8 +10,12 @@ import { AccountRow } from '@/components/AccountRow';
 import { isPast } from 'date-fns';
 import { NotificationManager } from '@/components/NotificationManager';
 import { useTheme } from 'next-themes';
+import { useAuthStore } from '@/lib/authStore';
+import { LoginPage } from '@/components/LoginPage';
+import { SupabaseSync } from '@/components/SupabaseSync';
 
 export default function App() {
+  const { user, loading: authLoading, signOut } = useAuthStore();
   const products = useStore((state) => state.products);
   const addProduct = useStore((state) => state.addProduct);
   const updateProduct = useStore((state) => state.updateProduct);
@@ -20,7 +24,7 @@ export default function App() {
   const settings = useStore((state) => state.settings);
   const updateSettings = useStore((state) => state.updateSettings);
   const importData = useStore((state) => state.importData);
-  
+
   const [selectedProductId, setSelectedProductId] = useState<string | null>(products[0]?.id || null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -34,6 +38,28 @@ export default function App() {
       setNotificationPermission(Notification.permission);
     }
   }, []);
+
+  // Always render SupabaseSync (it bootstraps auth), gate the rest
+  if (authLoading) {
+    return (
+      <>
+        <SupabaseSync />
+        <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] dark:bg-background">
+          <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 dark:border-white/20 dark:border-t-white rounded-full animate-spin" />
+        </div>
+      </>
+    );
+  }
+
+  if (!user) {
+    return (
+      <>
+        <SupabaseSync />
+        <LoginPage />
+        <Toaster position="bottom-right" richColors theme={theme as any || 'system'} />
+      </>
+    );
+  }
 
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) return;
@@ -113,6 +139,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#F9FAFB] dark:bg-background text-[#111827] dark:text-foreground transition-colors selection:bg-muted">
+      <SupabaseSync />
       <NotificationManager />
 
       {/* Standard App Title Bar */}
@@ -167,6 +194,16 @@ export default function App() {
             title="Toggle Theme"
           >
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
+          <div className="h-4 w-[1px] bg-gray-200 dark:bg-white/10 mx-1"></div>
+
+          <button
+            onClick={() => signOut()}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer flex items-center justify-center h-8 w-8"
+            title="Sign out"
+          >
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </header>
