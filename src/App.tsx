@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input';
 export default function App() {
   useAppTicker();
   const { user, loading: authLoading, signOut } = useAuthStore();
-  const products = useStore((state) => state.products);
+  const products = useStore((state) => state.products) || [];
   const addProduct = useStore((state) => state.addProduct);
   const updateProduct = useStore((state) => state.updateProduct);
   const removeProduct = useStore((state) => state.removeProduct);
@@ -36,7 +36,7 @@ export default function App() {
   const updateSettings = useStore((state) => state.updateSettings);
   const importData = useStore((state) => state.importData);
 
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(products[0]?.id || null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>((products || [])[0]?.id || null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
@@ -139,7 +139,7 @@ export default function App() {
     e.target.value = '';
   };
 
-  const selectedProduct = products.find(p => p.id === selectedProductId) || products[0];
+  const selectedProduct = (products || []).find(p => p.id === selectedProductId) || (products || [])[0];
 
   const sortedAccounts = selectedProduct 
     ? [...selectedProduct.accounts].sort((a, b) => {
