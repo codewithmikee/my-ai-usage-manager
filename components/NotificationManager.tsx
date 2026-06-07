@@ -5,7 +5,6 @@ import { isPast } from 'date-fns';
 export function NotificationManager() {
   const products = useStore((state) => state.products);
   const markNotified = useStore((state) => state.markNotified);
-  const markNextResetNotified = useStore((state) => state.markNextResetNotified);
 
   useEffect(() => {
     const checkNotifications = () => {
@@ -14,43 +13,49 @@ export function NotificationManager() {
 
       products.forEach((product) => {
         product.accounts.forEach((account) => {
-          // 1. Hard Availability Locks
+          // Iterate through all limits
+          Object.entries(account.limits || {}).forEach(([cycleId, limit]) => {
+            if (
+              limit.until !== null &&
+              isPast(limit.until) &&
+              !limit.notified
+            ) {
+              const cycle = product.cycles.find(c => c.id === cycleId);
+              const cycleName = cycle?.name || 'Limit';
+
+              new window.Notification(`${product.name}: ${cycleName} Ready`, {
+                body: `${account.name} has finished its ${cycleName.toLowerCase()} period.`,
+                icon: '/favicon.ico',
+              });
+
+              markNotified(product.id, account.id, cycleId);
+            }
+          });
+
+          // Legacy fallback for unmigrated data (if any remains)
           if (
             account.availableAt !== null &&
             isPast(account.availableAt) &&
             !account.notified
           ) {
-            new window.Notification(`${product.name} is Ready`, {
-              body: `${account.name} is now available to use.`,
-              icon: '/favicon.ico',
-            });
-
-            markNotified(product.id, account.id);
-          }
-
-          // 2. Scheduled Background Reset Cycles
-          if (
-            account.nextResetAt !== undefined &&
-            account.nextResetAt !== null &&
-            isPast(account.nextResetAt) &&
-            !account.nextResetNotified
-          ) {
-            new window.Notification(`${product.name} Cycle Reset`, {
-              body: `The background usage cycle for ${account.name} has reset!`,
-              icon: '/favicon.ico',
-            });
-
-            markNextResetNotified(product.id, account.id);
+             // We don't want double notifications if it was already caught by 'lock' cycle
+             // but markNotified handles the legacy flag too.
+             markNotified(product.id, account.id, 'lock');
           }
         });
       });
     };
 
     checkNotifications();
-    const intervalId = setInterval(checkNotifications, 10000);
+    // No need for a separate interval here if we want to be perfectly synced, 
+    // but 10s is fine for battery/perf. 
+    // Actually, Task 1.3 says "call clearExpiredLimits after notifying" - 
+    // but the shared ticker already calls clearExpiredLimits.
+    // So we should just poll for notifications.
+    const intervalId = setInterval(checkNotifications, 5000);
 
     return () => clearInterval(intervalId);
-  }, [products, markNotified, markNextResetNotified]);
+  }, [products, markNotified]);
 
   return null;
 }

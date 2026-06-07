@@ -7,21 +7,31 @@ import React, { useState, useEffect, ChangeEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { EditableText } from '@/components/EditableText';
 import { AccountRow } from '@/components/AccountRow';
-import { isPast } from 'date-fns';
+import { isPast, formatDistanceToNow } from 'date-fns';
 import { NotificationManager } from '@/components/NotificationManager';
 import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/lib/authStore';
 import { LoginPage } from '@/components/LoginPage';
 import { SupabaseSync } from '@/components/SupabaseSync';
 import { SyncIndicator } from '@/components/SyncIndicator';
+import { useAppTicker } from '@/lib/ticker';
+import { SettingsPopover } from '@/components/SettingsPopover';
+import { PRESET_CYCLES, Cycle } from '@/lib/cycles';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CycleManager } from '@/components/CycleManager';
+import { Input } from '@/components/ui/input';
 
 export default function App() {
+  useAppTicker();
   const { user, loading: authLoading, signOut } = useAuthStore();
   const products = useStore((state) => state.products);
   const addProduct = useStore((state) => state.addProduct);
   const updateProduct = useStore((state) => state.updateProduct);
   const removeProduct = useStore((state) => state.removeProduct);
   const addAccount = useStore((state) => state.addAccount);
+  const addCycle = useStore((state) => state.addCycle);
+  const removeCycle = useStore((state) => state.removeCycle);
+  const updateCycle = useStore((state) => state.updateCycle);
   const settings = useStore((state) => state.settings);
   const updateSettings = useStore((state) => state.updateSettings);
   const importData = useStore((state) => state.importData);
@@ -32,6 +42,8 @@ export default function App() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [pendingImport, setPendingImport] = useState<{ products: any[]; fileName: string } | null>(null);
   const [newAccountName, setNewAccountName] = useState('');
+  const [newToolName, setNewToolName] = useState('');
+  const [isAddingTool, setIsAddingTool] = useState(false);
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -131,10 +143,10 @@ export default function App() {
 
   const sortedAccounts = selectedProduct 
     ? [...selectedProduct.accounts].sort((a, b) => {
-        const aAvail = a.availableAt === null || isPast(a.availableAt);
-        const bAvail = b.availableAt === null || isPast(b.availableAt);
-        if (aAvail === bAvail) return 0;
-        return aAvail ? -1 : 1;
+        const aHasReached = Object.values(a.sessions || {}).some(s => s.state === 'reached');
+        const bHasReached = Object.values(b.sessions || {}).some(s => s.state === 'reached');
+        if (aHasReached === bHasReached) return 0;
+        return aHasReached ? 1 : -1;
       })
     : [];
 
@@ -197,6 +209,8 @@ export default function App() {
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
+          <SettingsPopover />
+
           <SyncIndicator />
 
           <div className="h-4 w-[1px] bg-gray-200 dark:bg-white/10 mx-1"></div>
@@ -226,51 +240,114 @@ export default function App() {
         )}>
           <div className="p-4 flex-1 overflow-y-auto">
             <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2">Tools</h2>
-          <nav className="space-y-0.5">
-            {products.map(product => {
-              const availableCount = product.accounts.filter(a => a.availableAt === null || isPast(a.availableAt)).length;
-              return (
-              <div 
-                key={product.id}
-                onClick={() => {
-                  setSelectedProductId(product.id);
-                  setIsSidebarOpen(false);
-                }}
-                className={cn(
-                  "flex items-center justify-between p-2 rounded-lg group cursor-pointer transition-colors",
-                  selectedProduct?.id === product.id ? "bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
-                )}
-              >
-                <EditableText
-                  value={product.name}
-                  onChange={(val) => {
-                    updateProduct(product.id, val);
-                    setEditingProductId(null);
+            <nav className="space-y-0.5">
+              {/* Tool list */}
+              {products.map(product => {
+                const availableCount = product.accounts.filter(a => {
+                  const sessions = a.sessions || {};
+                  const reachedSessions = Object.values(sessions).filter(s => s.state === 'reached');
+                  return reachedSessions.length === 0;
+                }).length;
+
+                const allAvailableAts = product.accounts.flatMap(a => 
+                  Object.values(a.sessions || {})
+                    .filter(s => s.state === 'reached' && s.availableAt !== null && s.availableAt > Date.now())
+                    .map(s => s.availableAt)
+                );
+                const nextUnlock = allAvailableAts.length > 0 ? Math.min(...allAvailableAts) : null;
+
+                return (
+                  <div 
+                    key={product.id}
+                    onClick={() => {
+                      setSelectedProductId(product.id);
+                      setIsSidebarOpen(false);
+                    }}
+                    className={cn(
+                      "flex flex-col p-2 rounded-lg group cursor-pointer transition-colors mb-0.5",
+                      selectedProduct?.id === product.id ? "bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                    )}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <EditableText
+                        value={product.name}
+                        onChange={(val) => {
+                          updateProduct(product.id, val);
+                          setEditingProductId(null);
+                        }}
+                        textClassName="text-sm font-medium truncate flex-1"
+                        trigger="doubleClick"
+                        autoFocus={product.id === editingProductId}
+                      />
+                      {availableCount > 0 && (
+                        <span className="text-[10px] bg-green-100 dark:bg-emerald-500/20 text-green-700 dark:text-emerald-400 px-1.5 py-0.5 rounded font-medium flex-shrink-0 ml-2">
+                          {availableCount} Ready
+                        </span>
+                      )}
+                    </div>
+                    {nextUnlock && availableCount < product.accounts.length && (
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 pl-0.5">
+                        Next unlock in {formatDistanceToNow(nextUnlock)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Inline add tool */}
+              {isAddingTool ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!newToolName.trim()) return;
+                    const newId = addProduct(newToolName.trim());
+                    setSelectedProductId(newId);
+                    setNewToolName('');
+                    setIsAddingTool(false);
+                    toast.success(`Added ${newToolName}`);
                   }}
-                  textClassName="text-sm font-medium w-full truncate"
-                  trigger="doubleClick"
-                  autoFocus={product.id === editingProductId}
-                />
-                {availableCount > 0 && (
-                   <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium flex-shrink-0 ml-2">
-                     {availableCount} Ready
-                   </span>
-                )}
-              </div>
-            )})}
-            <div
-              onClick={() => {
-                const newId = addProduct();
-                setSelectedProductId(newId);
-                setEditingProductId(newId);
-              }}
-              className="flex items-center p-2 mt-4 text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg group cursor-pointer transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              <span className="text-sm font-medium">New Tool</span>
-            </div>
-          </nav>
-        </div>
+                  className="mt-4 flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-700/50"
+                >
+                  <Plus className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <input
+                    type="text"
+                    value={newToolName}
+                    onChange={(e) => setNewToolName(e.target.value)}
+                    placeholder="Tool name..."
+                    autoFocus
+                    className="flex-1 bg-transparent border-0 outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-0.5"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newToolName.trim()}
+                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer"
+                    title="Create"
+                  >
+                    ↵
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingTool(false);
+                      setNewToolName('');
+                    }}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
+                    title="Cancel"
+                  >
+                    ✕
+                  </button>
+                </form>
+              ) : (
+                <div
+                  onClick={() => setIsAddingTool(true)}
+                  className="flex items-center p-2 mt-4 text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg group cursor-pointer transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  <span className="text-sm font-medium">New Tool</span>
+                </div>
+              )}
+            </nav>
+          </div>
 
         {/* Sidebar footer for backup/restore */}
         <div className="p-4 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-zinc-900/10 flex flex-col gap-3">
@@ -373,7 +450,7 @@ export default function App() {
                     textClassName="text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100 truncate pr-4"
                     trigger="doubleClick"
                   />
-                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Double click any text to edit.</p>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Double click to rename. Add ranges and credentials below.</p>
                 </div>
                 <Button 
                   variant="ghost" 
@@ -397,11 +474,22 @@ export default function App() {
             </header>
             
             <div className="flex-1 overflow-auto px-4 md:px-10 pb-10">
-              <div className="flex flex-col gap-1 max-w-3xl">
+              <div className="flex flex-col gap-2 max-w-4xl">
+                {/* Cycle Manager */}
+                <CycleManager
+                  cycles={selectedProduct.cycles}
+                  onAddCycle={(cycle) => addCycle(selectedProduct.id, cycle)}
+                  onRemoveCycle={(cycleId) => removeCycle(selectedProduct.id, cycleId)}
+                  onUpdateCycle={(cycleId, updates) => updateCycle(selectedProduct.id, cycleId, updates)}
+                />
+
+                {/* Credentials section */}
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-3 mb-2">Credentials</h3>
+                
                 {selectedProduct.accounts.length === 0 ? (
                   <div className="flex flex-col gap-3 py-4">
                     <div className="text-center py-10 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-gray-50/20 dark:bg-zinc-950/20">
-                      <p className="text-gray-400 dark:text-gray-500 text-sm">No accounts configured for this tool yet.</p>
+                      <p className="text-gray-400 dark:text-gray-500 text-sm">No credentials configured for this tool yet.</p>
                     </div>
                     
                     <form 
@@ -410,6 +498,7 @@ export default function App() {
                         if (!newAccountName.trim()) return;
                         addAccount(selectedProduct.id, newAccountName.trim());
                         setNewAccountName('');
+                        toast.success('Credential added');
                       }}
                       className="flex items-center px-4 py-3 rounded-xl transition-all bg-transparent border border-dashed border-gray-250 dark:border-white/10 focus-within:border-gray-400 dark:focus-within:border-white/30 focus-within:bg-gray-50/30 dark:focus-within:bg-white/5"
                     >
@@ -419,7 +508,7 @@ export default function App() {
                           type="text"
                           value={newAccountName}
                           onChange={(e) => setNewAccountName(e.target.value)}
-                          placeholder="Type first account name and press Enter to add..."
+                          placeholder="Type first credential name and press Enter..."
                           className="flex-1 bg-transparent border-0 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-0.5"
                           autoFocus
                         />
@@ -440,6 +529,7 @@ export default function App() {
                         if (!newAccountName.trim()) return;
                         addAccount(selectedProduct.id, newAccountName.trim());
                         setNewAccountName('');
+                        toast.success('Credential added');
                       }}
                       className="flex items-center px-4 py-3 rounded-xl transition-all bg-transparent border border-dashed border-gray-250 dark:border-white/10 focus-within:border-gray-400 dark:focus-within:border-white/30 focus-within:bg-gray-50/30 dark:focus-within:bg-white/5 mt-2"
                     >
@@ -449,7 +539,7 @@ export default function App() {
                           type="text"
                           value={newAccountName}
                           onChange={(e) => setNewAccountName(e.target.value)}
-                          placeholder="Type account name and press Enter to add..."
+                          placeholder="Type credential name and press Enter..."
                           className="flex-1 bg-transparent border-0 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-0.5"
                         />
                       </div>
