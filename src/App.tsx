@@ -107,7 +107,7 @@ export default function App() {
     reader.onload = (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
-        
+
         let parsedProducts = null;
         if (Array.isArray(json)) {
           parsedProducts = json;
@@ -141,17 +141,17 @@ export default function App() {
 
   const selectedProduct = (products || []).find(p => p.id === selectedProductId) || (products || [])[0];
 
-  const sortedAccounts = selectedProduct 
+  const sortedAccounts = selectedProduct
     ? [...selectedProduct.accounts].sort((a, b) => {
-        const aHasReached = Object.values(a.sessions || {}).some(s => s.state === 'reached');
-        const bHasReached = Object.values(b.sessions || {}).some(s => s.state === 'reached');
-        if (aHasReached === bHasReached) return 0;
-        return aHasReached ? 1 : -1;
-      })
+      const aHasReached = Object.values(a.sessions || {}).some(s => s.state === 'reached');
+      const bHasReached = Object.values(b.sessions || {}).some(s => s.state === 'reached');
+      if (aHasReached === bHasReached) return 0;
+      return aHasReached ? 1 : -1;
+    })
     : [];
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#F9FAFB] dark:bg-background text-[#111827] dark:text-foreground transition-colors selection:bg-muted">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#F9FAFB] dark:bg-background text-[#111827] dark:text-foreground transition-colors selection:bg-muted py-4 md:py-2">
       <SupabaseSync />
       <NotificationManager />
 
@@ -165,7 +165,7 @@ export default function App() {
           >
             {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          
+
           <div className="flex items-center gap-2.5">
             <div className="w-6 h-6 bg-black dark:bg-white rounded flex items-center justify-center">
               <div className="w-3.5 h-0.5 bg-white dark:bg-black rounded-full"></div>
@@ -177,17 +177,17 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500">
-          <button 
+          <button
             onClick={() => updateSettings({ showCountdown: !settings.showCountdown })}
             className={cn(
-              "p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center justify-center h-8 w-8", 
+              "p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center justify-center h-8 w-8",
               settings.showCountdown ? "text-green-600 dark:text-green-400" : "text-gray-400 hover:text-gray-950 dark:hover:text-gray-50"
             )}
             title="Toggle Countdown Style"
           >
             <span className="font-mono text-[10px] font-bold border border-current px-1 rounded-[3px] leading-none mb-[1px]">00</span>
           </button>
-          
+
           <button
             onClick={notificationPermission !== 'granted' ? requestNotificationPermission : undefined}
             className={cn(
@@ -201,9 +201,9 @@ export default function App() {
 
           <div className="h-4 w-[1px] bg-gray-200 dark:bg-white/10 mx-1"></div>
 
-          <button 
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-gray-950 dark:hover:text-gray-50 transition-colors cursor-pointer flex items-center justify-center h-8 w-8" 
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-gray-950 dark:hover:text-gray-50 transition-colors cursor-pointer flex items-center justify-center h-8 w-8"
             title="Toggle Theme"
           >
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -228,7 +228,7 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Backdrop for mobile */}
         {isSidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/40 dark:bg-black/60 md:hidden z-40 transition-opacity animate-fade-in"
             onClick={() => setIsSidebarOpen(false)}
           />
@@ -249,15 +249,15 @@ export default function App() {
                   return reachedSessions.length === 0;
                 }).length;
 
-                const allAvailableAts = product.accounts.flatMap(a => 
+                const allAvailableAts = product.accounts.flatMap(a =>
                   Object.values(a.sessions || {})
-                    .filter(s => s.state === 'reached' && s.availableAt !== null && s.availableAt > Date.now())
-                    .map(s => s.availableAt)
+                    .filter((s): s is typeof s & { availableAt: number } => s.state === 'reached' && s.availableAt !== null && s.availableAt > Date.now())
+                    .map(s => s.availableAt as number)
                 );
                 const nextUnlock = allAvailableAts.length > 0 ? Math.min(...allAvailableAts) : null;
 
                 return (
-                  <div 
+                  <div
                     key={product.id}
                     onClick={() => {
                       setSelectedProductId(product.id);
@@ -349,215 +349,215 @@ export default function App() {
             </nav>
           </div>
 
-        {/* Sidebar footer for backup/restore */}
-        <div className="p-4 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-zinc-900/10 flex flex-col gap-3">
-          {pendingImport ? (
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/25 rounded-lg border border-blue-100 dark:border-blue-900/30 flex flex-col gap-2">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-xs text-blue-950 dark:text-blue-300">Backup Loaded</p>
-                  <p className="text-[10px] text-blue-700 dark:text-blue-400 truncate mt-0.5">{pendingImport.fileName}</p>
-                  <p className="text-[10px] text-blue-700 dark:text-blue-400 mt-1">{pendingImport.products.length} tools detected</p>
+          {/* Sidebar footer for backup/restore */}
+          <div className="p-4 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-zinc-900/10 flex flex-col gap-3">
+            {pendingImport ? (
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/25 rounded-lg border border-blue-100 dark:border-blue-900/30 flex flex-col gap-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-xs text-blue-950 dark:text-blue-300">Backup Loaded</p>
+                    <p className="text-[10px] text-blue-700 dark:text-blue-400 truncate mt-0.5">{pendingImport.fileName}</p>
+                    <p className="text-[10px] text-blue-700 dark:text-blue-400 mt-1">{pendingImport.products.length} tools detected</p>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5 mt-1">
-                <button
-                  onClick={() => {
-                    const res = importData(pendingImport.products, true);
-                    if (res.success) {
-                      toast.success(`Successfully imported ${res.count} tools!`);
-                      if (pendingImport.products.length > 0) {
-                        setSelectedProductId(pendingImport.products[0].id);
+                <div className="grid grid-cols-2 gap-1.5 mt-1">
+                  <button
+                    onClick={() => {
+                      const res = importData(pendingImport.products, true);
+                      if (res.success) {
+                        toast.success(`Successfully imported ${res.count} tools!`);
+                        if (pendingImport.products.length > 0) {
+                          setSelectedProductId(pendingImport.products[0].id);
+                        }
+                      } else {
+                        toast.error("Failed to import backup");
                       }
-                    } else {
-                      toast.error("Failed to import backup");
-                    }
-                    setPendingImport(null);
-                  }}
-                  className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-[11px] font-semibold rounded-md transition-colors text-center cursor-pointer shadow-sm active:scale-95"
-                >
-                  Overwrite
-                </button>
+                      setPendingImport(null);
+                    }}
+                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-[11px] font-semibold rounded-md transition-colors text-center cursor-pointer shadow-sm active:scale-95"
+                  >
+                    Overwrite
+                  </button>
+                  <button
+                    onClick={() => {
+                      const res = importData(pendingImport.products, false);
+                      if (res.success) {
+                        toast.success(`Successfully merged ${res.count} tools!`);
+                      } else {
+                        toast.error("Failed to merge backup");
+                      }
+                      setPendingImport(null);
+                    }}
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold rounded-md transition-colors text-center cursor-pointer shadow-sm active:scale-95"
+                  >
+                    Merge
+                  </button>
+                </div>
                 <button
                   onClick={() => {
-                    const res = importData(pendingImport.products, false);
-                    if (res.success) {
-                      toast.success(`Successfully merged ${res.count} tools!`);
-                    } else {
-                      toast.error("Failed to merge backup");
-                    }
                     setPendingImport(null);
+                    toast.info("Import cancelled");
                   }}
-                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold rounded-md transition-colors text-center cursor-pointer shadow-sm active:scale-95"
+                  className="w-full text-center text-[10px] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mt-0.5 transition-colors cursor-pointer"
                 >
-                  Merge
+                  Cancel Import
                 </button>
               </div>
-              <button
-                onClick={() => {
-                  setPendingImport(null);
-                  toast.info("Import cancelled");
-                }}
-                className="w-full text-center text-[10px] text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mt-0.5 transition-colors cursor-pointer"
-              >
-                Cancel Import
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between px-1">
-                <h2 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">Backup / Restore</h2>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleExport}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-lg hover:text-gray-900 dark:hover:text-gray-100 transition-colors cursor-pointer shadow-sm active:scale-98"
-                  title="Export Backup to JSON File"
-                >
-                  <Download className="w-3.5 h-3.5 text-gray-500" />
-                  <span>Export</span>
-                </button>
+            ) : (
+              <>
+                <div className="flex items-center justify-between px-1">
+                  <h2 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">Backup / Restore</h2>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExport}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-lg hover:text-gray-900 dark:hover:text-gray-100 transition-colors cursor-pointer shadow-sm active:scale-98"
+                    title="Export Backup to JSON File"
+                  >
+                    <Download className="w-3.5 h-3.5 text-gray-500" />
+                    <span>Export</span>
+                  </button>
 
-                <label
-                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-lg hover:text-gray-900 dark:hover:text-gray-100 transition-colors cursor-pointer shadow-sm active:scale-98"
-                  title="Import Backup from JSON File"
-                >
-                  <Upload className="w-3.5 h-3.5 text-gray-500" />
-                  <span>Import</span>
-                  <input
-                    type="file"
-                    accept=".json"
-                    className="hidden"
-                    onChange={handleFileChange}
+                  <label
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-lg hover:text-gray-900 dark:hover:text-gray-100 transition-colors cursor-pointer shadow-sm active:scale-98"
+                    title="Import Backup from JSON File"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-gray-500" />
+                    <span>Import</span>
+                    <input
+                      type="file"
+                      accept=".json"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                </div>
+              </>
+            )}
+          </div>
+        </aside>
+
+        <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white dark:bg-background transition-colors">
+          {selectedProduct ? (
+            <>
+              <header className="min-h-24 px-4 md:px-10 flex flex-col justify-end pb-4 flex-shrink-0 pt-6">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                  <div className="flex flex-col group min-w-0">
+                    <EditableText
+                      value={selectedProduct.name}
+                      onChange={(val) => updateProduct(selectedProduct.id, val)}
+                      textClassName="text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100 truncate pr-4"
+                      trigger="doubleClick"
+                    />
+                    <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Double click to rename. Add ranges and credentials below.</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 -mb-1"
+                    onClick={() => {
+                      const toRemove = selectedProduct.id;
+                      const index = products.findIndex(p => p.id === toRemove);
+                      removeProduct(toRemove);
+                      if (products.length > 1) {
+                        setSelectedProductId(products[index === 0 ? 1 : 0].id);
+                      } else {
+                        setSelectedProductId(null);
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Tool
+                  </Button>
+                </div>
+              </header>
+
+              <div className="flex-1 overflow-auto px-4 md:px-10 pb-10">
+                <div className="flex flex-col gap-2 max-w-4xl">
+                  {/* Cycle Manager */}
+                  <CycleManager
+                    cycles={selectedProduct.cycles}
+                    onAddCycle={(cycle) => addCycle(selectedProduct.id, cycle)}
+                    onRemoveCycle={(cycleId) => removeCycle(selectedProduct.id, cycleId)}
+                    onUpdateCycle={(cycleId, updates) => updateCycle(selectedProduct.id, cycleId, updates)}
                   />
-                </label>
+
+                  {/* Credentials section */}
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-3 mb-2">Credentials</h3>
+
+                  {selectedProduct.accounts.length === 0 ? (
+                    <div className="flex flex-col gap-3 py-4">
+                      <div className="text-center py-10 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-gray-50/20 dark:bg-zinc-950/20">
+                        <p className="text-gray-400 dark:text-gray-500 text-sm">No credentials configured for this tool yet.</p>
+                      </div>
+
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (!newAccountName.trim()) return;
+                          addAccount(selectedProduct.id, newAccountName.trim());
+                          setNewAccountName('');
+                          toast.success('Credential added');
+                        }}
+                        className="flex items-center px-4 py-3 rounded-xl transition-all bg-transparent border border-dashed border-gray-250 dark:border-white/10 focus-within:border-gray-400 dark:focus-within:border-white/30 focus-within:bg-gray-50/30 dark:focus-within:bg-white/5"
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <Plus className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                          <input
+                            type="text"
+                            value={newAccountName}
+                            onChange={(e) => setNewAccountName(e.target.value)}
+                            placeholder="Type first credential name and press Enter..."
+                            className="flex-1 bg-transparent border-0 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-0.5"
+                            autoFocus
+                          />
+                        </div>
+                      </form>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex flex-col gap-0.5">
+                        {sortedAccounts.map((account) => (
+                          <AccountRow key={account.id} productId={selectedProduct.id} account={account} />
+                        ))}
+                      </div>
+
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (!newAccountName.trim()) return;
+                          addAccount(selectedProduct.id, newAccountName.trim());
+                          setNewAccountName('');
+                          toast.success('Credential added');
+                        }}
+                        className="flex items-center px-4 py-3 rounded-xl transition-all bg-transparent border border-dashed border-gray-250 dark:border-white/10 focus-within:border-gray-400 dark:focus-within:border-white/30 focus-within:bg-gray-50/30 dark:focus-within:bg-white/5 mt-2"
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <Plus className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                          <input
+                            type="text"
+                            value={newAccountName}
+                            onChange={(e) => setNewAccountName(e.target.value)}
+                            placeholder="Type credential name and press Enter..."
+                            className="flex-1 bg-transparent border-0 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-0.5"
+                          />
+                        </div>
+                      </form>
+                    </>
+                  )}
+                </div>
               </div>
             </>
-          )}
-        </div>
-      </aside>
-
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white dark:bg-background transition-colors">
-        {selectedProduct ? (
-          <>
-            <header className="min-h-24 px-4 md:px-10 flex flex-col justify-end pb-4 flex-shrink-0 pt-6">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                <div className="flex flex-col group min-w-0">
-                  <EditableText 
-                    value={selectedProduct.name}
-                    onChange={(val) => updateProduct(selectedProduct.id, val)}
-                    textClassName="text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100 truncate pr-4"
-                    trigger="doubleClick"
-                  />
-                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Double click to rename. Add ranges and credentials below.</p>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 -mb-1"
-                  onClick={() => {
-                    const toRemove = selectedProduct.id;
-                    const index = products.findIndex(p => p.id === toRemove);
-                    removeProduct(toRemove);
-                    if (products.length > 1) {
-                       setSelectedProductId(products[index === 0 ? 1 : 0].id);
-                    } else {
-                       setSelectedProductId(null);
-                    }
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Tool
-                </Button>
-              </div>
-            </header>
-            
-            <div className="flex-1 overflow-auto px-4 md:px-10 pb-10">
-              <div className="flex flex-col gap-2 max-w-4xl">
-                {/* Cycle Manager */}
-                <CycleManager
-                  cycles={selectedProduct.cycles}
-                  onAddCycle={(cycle) => addCycle(selectedProduct.id, cycle)}
-                  onRemoveCycle={(cycleId) => removeCycle(selectedProduct.id, cycleId)}
-                  onUpdateCycle={(cycleId, updates) => updateCycle(selectedProduct.id, cycleId, updates)}
-                />
-
-                {/* Credentials section */}
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-3 mb-2">Credentials</h3>
-                
-                {selectedProduct.accounts.length === 0 ? (
-                  <div className="flex flex-col gap-3 py-4">
-                    <div className="text-center py-10 border border-dashed border-gray-200 dark:border-white/10 rounded-xl bg-gray-50/20 dark:bg-zinc-950/20">
-                      <p className="text-gray-400 dark:text-gray-500 text-sm">No credentials configured for this tool yet.</p>
-                    </div>
-                    
-                    <form 
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (!newAccountName.trim()) return;
-                        addAccount(selectedProduct.id, newAccountName.trim());
-                        setNewAccountName('');
-                        toast.success('Credential added');
-                      }}
-                      className="flex items-center px-4 py-3 rounded-xl transition-all bg-transparent border border-dashed border-gray-250 dark:border-white/10 focus-within:border-gray-400 dark:focus-within:border-white/30 focus-within:bg-gray-50/30 dark:focus-within:bg-white/5"
-                    >
-                      <div className="flex items-center gap-3 w-full">
-                        <Plus className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                        <input
-                          type="text"
-                          value={newAccountName}
-                          onChange={(e) => setNewAccountName(e.target.value)}
-                          placeholder="Type first credential name and press Enter..."
-                          className="flex-1 bg-transparent border-0 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-0.5"
-                          autoFocus
-                        />
-                      </div>
-                    </form>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex flex-col gap-0.5">
-                      {sortedAccounts.map((account) => (
-                        <AccountRow key={account.id} productId={selectedProduct.id} account={account} />
-                      ))}
-                    </div>
-                    
-                    <form 
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (!newAccountName.trim()) return;
-                        addAccount(selectedProduct.id, newAccountName.trim());
-                        setNewAccountName('');
-                        toast.success('Credential added');
-                      }}
-                      className="flex items-center px-4 py-3 rounded-xl transition-all bg-transparent border border-dashed border-gray-250 dark:border-white/10 focus-within:border-gray-400 dark:focus-within:border-white/30 focus-within:bg-gray-50/30 dark:focus-within:bg-white/5 mt-2"
-                    >
-                      <div className="flex items-center gap-3 w-full">
-                        <Plus className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                        <input
-                          type="text"
-                          value={newAccountName}
-                          onChange={(e) => setNewAccountName(e.target.value)}
-                          placeholder="Type credential name and press Enter..."
-                          className="flex-1 bg-transparent border-0 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 py-0.5"
-                        />
-                      </div>
-                    </form>
-                  </>
-                )}
-              </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+              <Settings2 className="w-12 h-12 mb-4 opacity-20" />
+              <p>Select or add a tool from the sidebar.</p>
             </div>
-          </>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-             <Settings2 className="w-12 h-12 mb-4 opacity-20" />
-             <p>Select or add a tool from the sidebar.</p>
-          </div>
-        )}
-      </main>
-      
-        </div>
+          )}
+        </main>
+
+      </div>
       <Toaster position="bottom-right" richColors theme={theme as any || 'system'} />
     </div>
   );
